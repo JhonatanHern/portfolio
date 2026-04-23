@@ -140,6 +140,7 @@ export function Galaxy({ isSecurityRoute = false }: { isSecurityRoute?: boolean 
   const bgStarsRef = useRef<THREE.Points>(null!);
   const transitionRef = useRef(isSecurityRoute ? 1 : 0);
   const hasInitializedColors = useRef(false);
+  const mountTimeRef = useRef(Date.now());
 
   const pointsData = useMemo(() => generateParticleData(GALAXY_PARAMS.countPoints, 1, true), []);
   const tetraData = useMemo(() => generateParticleData(GALAXY_PARAMS.countTetra, 0.15), []);
@@ -191,18 +192,24 @@ export function Galaxy({ isSecurityRoute = false }: { isSecurityRoute?: boolean 
     let needsColorUpdate = false;
 
     if (transitionRef.current !== target) {
-      const step = delta / 0.7; // reach in 0.7s
-      if (transitionRef.current < target) {
-        transitionRef.current = Math.min(1, transitionRef.current + step);
+      if (Date.now() - mountTimeRef.current < 300) {
+        transitionRef.current = target;
       } else {
-        transitionRef.current = Math.max(0, transitionRef.current - step);
+        const step = delta / 0.7; // reach in 0.7s
+        if (transitionRef.current < target) {
+          transitionRef.current = Math.min(1, transitionRef.current + step);
+        } else {
+          transitionRef.current = Math.max(0, transitionRef.current - step);
+        }
       }
       needsColorUpdate = true;
     }
 
     if (!hasInitializedColors.current) {
-      needsColorUpdate = true;
-      hasInitializedColors.current = true;
+      if (tetraMeshRef.current?.instanceColor && boxMeshRef.current?.instanceColor && octaMeshRef.current?.instanceColor) {
+        needsColorUpdate = true;
+        hasInitializedColors.current = true;
+      }
     }
     
     if (needsColorUpdate) {

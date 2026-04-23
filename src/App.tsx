@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useProgress } from '@react-three/drei';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter as BrowserRouter, Routes, Route } from 'react-router-dom';
 import Scene from './components/3d/Scene';
 import LoadingScreen from './components/ui/LoadingScreen';
 import Home from './components/pages/Home';
@@ -28,14 +28,13 @@ function App() {
         {isLoading && <LoadingScreen progress={progress === 0 && !active ? 100 : progress} />}
       </AnimatePresence>
 
-      <div 
-        className={`relative w-full min-h-screen text-white/90 font-sans selection:bg-violet-500/30 transition-opacity duration-1000 ${
-          isLoading ? 'opacity-0 h-screen overflow-hidden' : 'opacity-100'
-        }`}
+      <div
+        className={`relative w-full min-h-screen text-white/90 font-sans selection:bg-violet-500/30 transition-opacity duration-1000 ${isLoading ? 'opacity-0 h-screen overflow-hidden' : 'opacity-100'
+          }`}
       >
         {/* 3D Background layer */}
         <Scene />
-        
+
         {/* Main Content layer */}
         <Routes>
           <Route path="/" element={<Home />} />
