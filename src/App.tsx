@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useProgress } from '@react-three/drei';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Scene from './components/3d/Scene';
-import Hero from './components/sections/Hero';
-import About from './components/sections/About';
-import Experience from './components/sections/Experience';
-import Skills from './components/sections/Skills';
-import Education from './components/sections/Education';
 import LoadingScreen from './components/ui/LoadingScreen';
+import Home from './components/pages/Home';
+import SecurityToolPage from './components/pages/SecurityToolPage';
 
 function App() {
   const { progress, active } = useProgress();
@@ -25,7 +23,7 @@ function App() {
   }, [progress, active]);
 
   return (
-    <>
+    <BrowserRouter>
       <AnimatePresence>
         {isLoading && <LoadingScreen progress={progress === 0 && !active ? 100 : progress} />}
       </AnimatePresence>
@@ -39,15 +37,12 @@ function App() {
         <Scene />
         
         {/* Main Content layer */}
-        <main className="relative z-10 w-full max-w-7xl mx-auto flex flex-col">
-          <Hero />
-          <About />
-          <Experience />
-          <Skills />
-          <Education />
-        </main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/security-tool" element={<SecurityToolPage />} />
+        </Routes>
       </div>
-    </>
+    </BrowserRouter>
   );
 }
 

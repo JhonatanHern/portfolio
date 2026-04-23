@@ -2,9 +2,10 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Points, PointMaterial } from '@react-three/drei';
 import * as THREE from 'three';
+import { GALAXY_THEME } from './colors';
 
 const GALAXY_PARAMS = {
-  countPoints: 4000,
+  countPoints: 2000,
   countTetra: 500,
   countBoxes: 500,
   countOcta: 300,
@@ -13,19 +14,26 @@ const GALAXY_PARAMS = {
   spin: 1.5,
   randomness: 0.2,
   randomnessPower: 3,
-  insideColor: '#4A148C',
-  outsideColor: '#c026d3',
 };
 
-function generateParticleData(count: number, sizeMultiplier: number = 1) {
+function generateParticleData(count: number, sizeMultiplier: number = 1, isPoints: boolean = false) {
   const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
+  const colorsBase = new Float32Array(count * 3);
+  const colorsAlt = new Float32Array(count * 3);
+  const colorsCurrent = new Float32Array(count * 3);
   const scales = new Float32Array(count);
   const rotations = new Float32Array(count * 3);
 
-  const colorInside = new THREE.Color(GALAXY_PARAMS.insideColor);
-  const colorOutside = new THREE.Color(GALAXY_PARAMS.outsideColor);
-  const colorViolet = new THREE.Color('#6A1B9A');
+  const colorInside = new THREE.Color(GALAXY_THEME.main.inside);
+  const colorOutside = new THREE.Color(GALAXY_THEME.main.outside);
+  const colorAccent = new THREE.Color(GALAXY_THEME.main.accent);
+
+  const colorInsideAlt = new THREE.Color(GALAXY_THEME.alt.inside);
+  const colorOutsideAlt = new THREE.Color(GALAXY_THEME.alt.outside);
+  const colorAccentAlt = new THREE.Color(GALAXY_THEME.alt.accent);
+
+  const pointsColorMain = GALAXY_THEME.main.points ? new THREE.Color(GALAXY_THEME.main.points) : null;
+  const pointsColorAlt = GALAXY_THEME.alt.points ? new THREE.Color(GALAXY_THEME.alt.points) : null;
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
@@ -44,15 +52,37 @@ function generateParticleData(count: number, sizeMultiplier: number = 1) {
     // Mix colors based on distance from center
     const colorMix = colorInside.clone();
     colorMix.lerp(colorOutside, radius / GALAXY_PARAMS.radius);
-    
-    // Randomly inject violet accents
-    if (Math.random() > 0.8) {
-      colorMix.lerp(colorViolet, 0.8);
+    const colorMixAlt = colorInsideAlt.clone();
+    colorMixAlt.lerp(colorOutsideAlt, radius / GALAXY_PARAMS.radius);
+
+    // Randomly inject accents
+    const isAccent = Math.random() > 0.8;
+    if (isAccent) {
+      colorMix.lerp(colorAccent, 0.8);
+      colorMixAlt.lerp(colorAccentAlt, 0.8);
     }
 
-    colors[i3] = colorMix.r;
-    colors[i3 + 1] = colorMix.g;
-    colors[i3 + 2] = colorMix.b;
+    if (isPoints) {
+      if (pointsColorMain) {
+        const shade = 0.6 + Math.random() * 0.4;
+        colorMix.copy(pointsColorMain).multiplyScalar(shade);
+      }
+      if (pointsColorAlt) {
+        const shade = 0.6 + Math.random() * 0.4;
+        colorMixAlt.copy(pointsColorAlt).multiplyScalar(shade);
+      }
+    }
+
+    colorsBase[i3] = colorMix.r;
+    colorsBase[i3 + 1] = colorMix.g;
+    colorsBase[i3 + 2] = colorMix.b;
+    colorsCurrent[i3] = colorMix.r;
+    colorsCurrent[i3 + 1] = colorMix.g;
+    colorsCurrent[i3 + 2] = colorMix.b;
+
+    colorsAlt[i3] = colorMixAlt.r;
+    colorsAlt[i3 + 1] = colorMixAlt.g;
+    colorsAlt[i3 + 2] = colorMixAlt.b;
 
     // Basic scales and rotations for complex geometries
     scales[i] = (Math.random() * 0.5 + 0.5) * sizeMultiplier;
@@ -61,20 +91,61 @@ function generateParticleData(count: number, sizeMultiplier: number = 1) {
     rotations[i3 + 2] = Math.random() * Math.PI;
   }
 
-  return { positions, colors, scales, rotations };
+  return { positions, colorsBase, colorsAlt, colorsCurrent, scales, rotations };
 }
 
-export function Galaxy() {
+function generateBackgroundStarsData(count: number, innerRadius: number = 12, outerRadius: number = 35) {
+  const positions = new Float32Array(count * 3);
+  const colorsBase = new Float32Array(count * 3);
+  const colorsAlt = new Float32Array(count * 3);
+  const colorsCurrent = new Float32Array(count * 3);
+
+  const starColorMain = new THREE.Color(GALAXY_THEME.main.backgroundStars);
+  const starColorAlt = new THREE.Color(GALAXY_THEME.alt.backgroundStars);
+
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+    const r = innerRadius + (outerRadius - innerRadius) * Math.cbrt(Math.random());
+    const theta = Math.random() * 2 * Math.PI;
+    const phi = Math.acos(2 * Math.random() - 1);
+
+    positions[i3] = r * Math.sin(phi) * Math.cos(theta);
+    positions[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    positions[i3 + 2] = r * Math.cos(phi);
+
+    const shade = 0.3 + Math.random() * 0.7;
+
+    colorsBase[i3] = starColorMain.r * shade;
+    colorsBase[i3 + 1] = starColorMain.g * shade;
+    colorsBase[i3 + 2] = starColorMain.b * shade;
+
+    colorsCurrent[i3] = colorsBase[i3];
+    colorsCurrent[i3 + 1] = colorsBase[i3 + 1];
+    colorsCurrent[i3 + 2] = colorsBase[i3 + 2];
+
+    colorsAlt[i3] = starColorAlt.r * shade;
+    colorsAlt[i3 + 1] = starColorAlt.g * shade;
+    colorsAlt[i3 + 2] = starColorAlt.b * shade;
+  }
+
+  return { positions, colorsBase, colorsAlt, colorsCurrent };
+}
+
+export function Galaxy({ isSecurityRoute = false }: { isSecurityRoute?: boolean }) {
   const groupRef = useRef<THREE.Group>(null!);
   const pointsRef = useRef<THREE.Points>(null!);
   const tetraMeshRef = useRef<THREE.InstancedMesh>(null!);
   const boxMeshRef = useRef<THREE.InstancedMesh>(null!);
   const octaMeshRef = useRef<THREE.InstancedMesh>(null!);
+  const bgStarsRef = useRef<THREE.Points>(null!);
+  const transitionRef = useRef(isSecurityRoute ? 1 : 0);
+  const hasInitializedColors = useRef(false);
 
-  const pointsData = useMemo(() => generateParticleData(GALAXY_PARAMS.countPoints, 1), []);
+  const pointsData = useMemo(() => generateParticleData(GALAXY_PARAMS.countPoints, 1, true), []);
   const tetraData = useMemo(() => generateParticleData(GALAXY_PARAMS.countTetra, 0.15), []);
   const boxData = useMemo(() => generateParticleData(GALAXY_PARAMS.countBoxes, 0.12), []);
   const octaData = useMemo(() => generateParticleData(GALAXY_PARAMS.countOcta, 0.18), []);
+  const bgStarsData = useMemo(() => generateBackgroundStarsData(1500, 15, 60), []);
 
   useEffect(() => {
     const dummy = new THREE.Object3D();
@@ -84,13 +155,13 @@ export function Galaxy() {
       if (!mesh) return;
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
-        dummy.position.set(data.positions[i3], data.positions[i3+1], data.positions[i3+2]);
-        dummy.rotation.set(data.rotations[i3], data.rotations[i3+1], data.rotations[i3+2]);
+        dummy.position.set(data.positions[i3], data.positions[i3 + 1], data.positions[i3 + 2]);
+        dummy.rotation.set(data.rotations[i3], data.rotations[i3 + 1], data.rotations[i3 + 2]);
         dummy.scale.set(data.scales[i], data.scales[i], data.scales[i]);
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
-        
-        color.setRGB(data.colors[i3], data.colors[i3+1], data.colors[i3+2]);
+
+        color.setRGB(data.colorsBase[i3], data.colorsBase[i3 + 1], data.colorsBase[i3 + 2]);
         mesh.setColorAt(i, color);
       }
       mesh.instanceMatrix.needsUpdate = true;
@@ -102,7 +173,7 @@ export function Galaxy() {
     applyData(octaMeshRef.current, octaData, GALAXY_PARAMS.countOcta);
   }, [tetraData, boxData, octaData]);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (groupRef.current) {
       // Constant slow Y-axis rotation and breathing effect on scale
       groupRef.current.rotation.y = state.clock.elapsedTime * 0.05;
@@ -115,12 +186,76 @@ export function Galaxy() {
       if (boxMeshRef.current) boxMeshRef.current.rotation.y = state.clock.elapsedTime * -0.01;
       if (octaMeshRef.current) octaMeshRef.current.rotation.y = state.clock.elapsedTime * 0.015;
     }
+
+    const target = isSecurityRoute ? 1 : 0;
+    let needsColorUpdate = false;
+
+    if (transitionRef.current !== target) {
+      const step = delta / 0.7; // reach in 0.7s
+      if (transitionRef.current < target) {
+        transitionRef.current = Math.min(1, transitionRef.current + step);
+      } else {
+        transitionRef.current = Math.max(0, transitionRef.current - step);
+      }
+      needsColorUpdate = true;
+    }
+
+    if (!hasInitializedColors.current) {
+      needsColorUpdate = true;
+      hasInitializedColors.current = true;
+    }
+    
+    if (needsColorUpdate) {
+      const t = transitionRef.current;
+      
+      if (pointsRef.current && pointsRef.current.geometry.attributes.color) {
+        const currentColors = pointsRef.current.geometry.attributes.color.array as Float32Array;
+        for (let i = 0; i < currentColors.length; i++) {
+          currentColors[i] = pointsData.colorsBase[i] + (pointsData.colorsAlt[i] - pointsData.colorsBase[i]) * t;
+        }
+        pointsRef.current.geometry.attributes.color.needsUpdate = true;
+      }
+
+      if (bgStarsRef.current && bgStarsRef.current.geometry.attributes.color) {
+        const bgColors = bgStarsRef.current.geometry.attributes.color.array as Float32Array;
+        for (let i = 0; i < bgColors.length; i++) {
+          bgColors[i] = bgStarsData.colorsBase[i] + (bgStarsData.colorsAlt[i] - bgStarsData.colorsBase[i]) * t;
+        }
+        bgStarsRef.current.geometry.attributes.color.needsUpdate = true;
+      }
+
+      const updateInstancedColors = (mesh: THREE.InstancedMesh | null, data: ReturnType<typeof generateParticleData>) => {
+        if (!mesh || !mesh.instanceColor) return;
+        const currentColors = mesh.instanceColor.array as Float32Array;
+        for (let i = 0; i < currentColors.length; i++) {
+          currentColors[i] = data.colorsBase[i] + (data.colorsAlt[i] - data.colorsBase[i]) * t;
+        }
+        mesh.instanceColor.needsUpdate = true;
+      };
+
+      updateInstancedColors(tetraMeshRef.current, tetraData);
+      updateInstancedColors(boxMeshRef.current, boxData);
+      updateInstancedColors(octaMeshRef.current, octaData);
+    }
   });
 
   return (
     <group ref={groupRef}>
+      {/* Background Starfield */}
+      <Points ref={bgStarsRef} positions={bgStarsData.positions} colors={bgStarsData.colorsCurrent} stride={3} frustumCulled={false}>
+        <PointMaterial
+          transparent
+          opacity={0.3}
+          vertexColors
+          size={0.1}
+          sizeAttenuation={true}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </Points>
+
       {/* Dusty Points Baseline */}
-      <Points ref={pointsRef} positions={pointsData.positions} colors={pointsData.colors} stride={3} frustumCulled={false}>
+      <Points ref={pointsRef} positions={pointsData.positions} colors={pointsData.colorsCurrent} stride={3} frustumCulled={false}>
         <PointMaterial
           transparent
           opacity={0.2}
