@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useProgress } from '@react-three/drei';
 import { HashRouter as BrowserRouter, Routes, Route } from 'react-router-dom';
-import Scene from './components/3d/Scene';
 import LoadingScreen from './components/ui/LoadingScreen';
-import Home from './components/pages/Home';
-import SecurityToolPage from './components/pages/SecurityToolPage';
+
+const Scene = lazy(() => import('./components/3d/Scene'));
+const Home = lazy(() => import('./components/pages/Home'));
+const SecurityToolPage = lazy(() => import('./components/pages/SecurityToolPage'));
 
 function App() {
   const { progress, active } = useProgress();
@@ -33,13 +34,17 @@ function App() {
           }`}
       >
         {/* 3D Background layer */}
-        <Scene />
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
 
         {/* Main Content layer */}
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/security-tool" element={<SecurityToolPage />} />
-        </Routes>
+        <Suspense fallback={null}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/security-tool" element={<SecurityToolPage />} />
+          </Routes>
+        </Suspense>
       </div>
     </BrowserRouter>
   );

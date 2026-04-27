@@ -42,6 +42,14 @@ const experiences = [
     ],
   },
   {
+    company: 'Serofca',
+    role: 'Software Developer',
+    period: 'June 2017 – Aug 2018',
+    description: [
+      'Developed several company websites and web applications.',
+    ],
+  },
+  {
     company: 'Freelance Software Engineer',
     role: 'Full Stack Developer',
     period: 'June 2016 – Present',

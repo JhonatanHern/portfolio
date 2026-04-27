@@ -5,7 +5,13 @@ import { Award, GraduationCap } from 'lucide-react';
 const certifications = [
   'Smart Contract Security & Auditing – Cyfrin Updraft',
   'Advanced MongoDB & Scalable Databases – MongoDB University',
-  'English C2 Proficiency (EF SET)'
+  'English C2 Proficiency (EF SET)',
+  'Cypress: Web Automation Testing from Zero to Hero',
+  'Program Oracles Using Chainlink. Chainlink Programming 101',
+  'Smart contract security – Moralis Academy',
+  'Cryptography & Privacy Coins: Bitcoin, Monero, ZCash and more',
+  'Smart contract development (EYSS)',
+  'Holochain – Dev Camp'
 ];
 
 export default function Education() {
